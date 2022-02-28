@@ -1,0 +1,117 @@
+#!/usr/bin/env python3
+from __future__ import division
+import unittest
+from mavros_msgs.srv import CommandBool, ParamGet, ParamSet, SetMode, SetModeRequest, WaypointClear, CommandLong
+from six.moves import xrange
+import rospy
+from std_msgs.msg import Bool
+
+
+class MavrosWatcher(unittest.TestCase):
+    def __init__(self, *args):
+        super(MavrosWatcher, self).__init__(*args)
+        # ROS services
+        service_timeout = 10
+        rospy.loginfo("waiting for ROS services")
+        uav_id = rospy.get_param("uav_id")
+        print("my_id is ",uav_id)
+        service_name = '/'+uav_id + '/mavros/cmd/command'
+        wifi_connected = '/' +uav_id + '/connected'
+        print(service_name)
+        print(wifi_connected)
+        try:
+            # rospy.wait_for_service(uav_id+'/mavros/param/get', service_timeout)
+            # rospy.wait_for_service(uav_id+'/mavros/param/set', service_timeout)
+            # rospy.wait_for_service(uav_id+'/mavros/cmd/arming', service_timeout)
+            rospy.wait_for_service(service_name, service_timeout)
+            # rospy.wait_for_service(uav_id+'/mavros/mission/push', service_timeout)
+            # rospy.wait_for_service(uav_id+'/mavros/mission/clear', service_timeout)
+            # rospy.wait_for_service(uav_id+'/mavros/set_mode', service_timeout)
+            rospy.loginfo("ROS services are up")
+        except rospy.ROSException:
+            self.fail("failed to connect to services")
+
+        self.wifi_status = Bool()
+
+        self.set_arming_srv = rospy.ServiceProxy(uav_id+'/mavros/cmd/arming',
+                                                 CommandBool)
+
+        self.command_client = rospy.ServiceProxy(service_name, CommandLong)
+
+        self.set_mode_srv = rospy.ServiceProxy(uav_id+'mavros/set_mode', SetMode)
+
+        self.wifi_status_sub = rospy.Subscriber(wifi_connected, Bool,
+                                          self.wifi_status_cb)
+
+    def set_disarm(self, wifi_status, timeout):
+        arm = wifi_status
+        rospy.loginfo("setting FCU arm: {0}".format(arm))
+        loop_freq = 1
+        rate = rospy.Rate(loop_freq)
+        arm_set = False
+
+        for i in xrange(timeout * loop_freq):
+            try:
+                # commandCall = CommandLong()
+                # commandCall.broadcast = False
+                # commandCall.command = 400
+                # commandCall.confirmation = True
+                # commandCall.param1 = 0.0
+                # commandCall.param2 = 21196.0
+                # commandCall.param3 = 0.0
+                # commandCall.param4 = 0.0
+                # commandCall.param5 = 0.0
+                # commandCall.param6 = 0.0
+                # commandCall.param7 = 0.0
+                self.command_client(False,400,1,0,21196,0,0,0,0,0)
+                # res = self.set_arming_srv(arm)
+                # if not res.success:
+                #     rospy.logerr("failed to send arm command")
+            except rospy.ServiceException as e:
+                rospy.logerr(e)
+
+            try:
+                rate.sleep()
+            except rospy.ROSException as e:
+                self.fail(e)
+
+        # for i in xrange(timeout * loop_freq):
+        #     if self.state.armed == arm:
+        #         arm_set = True
+        #         rospy.loginfo("set arm success | seconds: {0} of {1}".format(
+        #             i / loop_freq, timeout))
+        #         break
+        #     else:
+        #         try:
+        #             res = self.set_arming_srv(arm)
+        #             if not res.success:
+        #                 rospy.logerr("failed to send arm command")
+        #         except rospy.ServiceException as e:
+        #             rospy.logerr(e)
+
+        #     try:
+        #         rate.sleep()
+        #     except rospy.ROSException as e:
+        #         self.fail(e)
+
+    def wifi_status_cb(self,data):
+        rospy.loginfo("ROS services are up")
+        rospy.loginfo("wifi status is")
+        
+        self.wifi_status = bool(data.data)
+        # self.wifi_status = data
+        rospy.loginfo(self.wifi_status)
+
+        if not self.wifi_status:
+            self.set_disarm(self.wifi_status,5)
+
+
+
+if __name__ == '__main__':
+    rospy.init_node('mavros_watcher', anonymous=True)
+    mavros_wifi_monitor = MavrosWatcher()
+    while not rospy.is_shutdown():
+        rate = rospy.Rate(200)
+        #rospy.spinOnce()
+        rate.sleep()
+    rospy.spin()
