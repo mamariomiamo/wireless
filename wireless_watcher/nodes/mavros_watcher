@@ -19,17 +19,17 @@ class MavrosWatcher(unittest.TestCase):
         wifi_connected = '/' +uav_id + '/connected'
         print(service_name)
         print(wifi_connected)
-        try:
+        #try:
             # rospy.wait_for_service(uav_id+'/mavros/param/get', service_timeout)
             # rospy.wait_for_service(uav_id+'/mavros/param/set', service_timeout)
             # rospy.wait_for_service(uav_id+'/mavros/cmd/arming', service_timeout)
-            rospy.wait_for_service(service_name, service_timeout)
+        #    rospy.wait_for_service(service_name, service_timeout)
             # rospy.wait_for_service(uav_id+'/mavros/mission/push', service_timeout)
             # rospy.wait_for_service(uav_id+'/mavros/mission/clear', service_timeout)
             # rospy.wait_for_service(uav_id+'/mavros/set_mode', service_timeout)
-            rospy.loginfo("ROS services are up")
-        except rospy.ROSException:
-            self.fail("failed to connect to services")
+        #    rospy.loginfo("ROS services are up")
+        #except rospy.ROSException:
+        #    self.fail("failed to connect to services")
 
         self.wifi_status = Bool()
 
@@ -42,6 +42,8 @@ class MavrosWatcher(unittest.TestCase):
 
         self.wifi_status_sub = rospy.Subscriber(wifi_connected, Bool,
                                           self.wifi_status_cb)
+        self.reported = 0
+        self.alarm = 0
 
     def set_disarm(self, wifi_status, timeout):
         arm = wifi_status
@@ -95,15 +97,19 @@ class MavrosWatcher(unittest.TestCase):
         #         self.fail(e)
 
     def wifi_status_cb(self,data):
-        rospy.loginfo("ROS services are up")
-        rospy.loginfo("wifi status is")
-        
         self.wifi_status = bool(data.data)
-        # self.wifi_status = data
-        rospy.loginfo(self.wifi_status)
+        if(not self.reported):
+           #rospy.loginfo("ROS services are up")
+           rospy.loginfo("wifi status is " + str(self.wifi_status))
+           self.reported = 1
+           self.alarm = 0
+        self.wifi_status = bool(data.data)
 
         if not self.wifi_status:
             self.set_disarm(self.wifi_status,5)
+            self.alarm = 1
+        if(self.alarm):
+           rospy.loginfo("wifi status is " + str(self.wifi_status))
 
 
 

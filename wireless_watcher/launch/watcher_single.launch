@@ -1,0 +1,39 @@
+<launch>
+  <arg name="_uav_id" value="$(env UAV_GROUPNAME)" />
+  <arg name="_uav_idx" value="$(env HOSTNAME)" />
+  <!-- <node ns="wireless" pkg="wireless_watcher" name="wireless_watcher" type="watcher_node" /> -->
+<!-- 
+  <group> -->
+  <!-- <param name="uav_id" value = "S0"/> -->
+  <group ns="$(arg _uav_id)">
+  <param name="uav_id" value="$(arg _uav_id)"/>
+  <arg name="id" value="$(arg _uav_id)"/>
+  <node pkg="wireless_watcher" name="mavros_wifi_watcher" type="mavros_watcher" output="screen">
+    <!-- <param name="uav_id" value="/S0"/> -->
+  </node>
+  <node pkg="wireless_watcher" name="wireless_watcher" type="watcher_node" />
+  </group>
+<!--
+  <group ns="S1">
+    <param name="uav_id" value="S1"/>
+    <arg name="id" value="S1"/>
+    <node pkg="wireless_watcher" name="mavros_wifi_watcher1" type="mavros_watcher" output="screen">
+    </node>
+    <node pkg="wireless_watcher" name="wireless_watcher1" type="watcher_node" />
+    </group>-->
+
+  <!-- <node ns="S1" pkg="wireless_watcher" name="mavros_wifi_watcher1" type="mavros_watcher" output="screen">
+    <param name="uav_id" value="S1"/>
+  </node> -->
+  <!-- </group> -->
+  <!-- <group ns="S1">
+    <arg name="id" value = "S1"/>
+    <node pkg="wireless_watcher" name="mavros_wifi_watcher1" type="mavros_watcher" output="screen">
+      <param name="id" value="$(arg id)"/>
+    </node>
+    </group> -->
+  <!-- <group>
+    <param name="id" value = "S1"/>
+    <node pkg="wireless_watcher" name="mavros_wifi_watcher1" type="mavros_watcher" output="screen"/>
+    </group> -->
+</launch>
