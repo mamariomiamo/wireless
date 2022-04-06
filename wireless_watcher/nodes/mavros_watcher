@@ -132,6 +132,8 @@ class MavrosWatcher(unittest.TestCase):
         if not self.wifi_status:
             self.set_disarm(self.wifi_status,5)
             self.alarm = 1
+        else:
+            self.alarm = 0
         if(self.alarm):
            rospy.loginfo("wifi status is " + str(self.wifi_status))
 
