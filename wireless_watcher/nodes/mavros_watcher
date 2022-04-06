@@ -42,9 +42,31 @@ class MavrosWatcher(unittest.TestCase):
 
         self.wifi_status_sub = rospy.Subscriber(wifi_connected, Bool,
                                           self.wifi_status_cb)
+
+        
+
         self.reported = 0
         self.alarm = 0
+        self.last_cb_time = 0.0
+        self.cb_checker = 0.0
 
+        self.timer = rospy.Timer(rospy.Duration(0.5),self.cb_timer)
+
+    def cb_timer(self, event):
+        self.cb_checker = rospy.get_time()
+        print(self.cb_checker)
+        print(self.last_cb_time)
+        if(self.last_cb_time<1):
+            self.last_cb_time = rospy.get_time()
+        
+        cb_interval = self.cb_checker - self.last_cb_time
+        print(cb_interval)
+        if cb_interval > 3:
+            rospy.loginfo("disconnected")
+            self.set_disarm(False,5)
+        else:
+            rospy.loginfo("all is well")
+        
     def set_disarm(self, wifi_status, timeout):
         arm = wifi_status
         rospy.loginfo("setting FCU arm: {0}".format(arm))
@@ -98,6 +120,8 @@ class MavrosWatcher(unittest.TestCase):
 
     def wifi_status_cb(self,data):
         self.wifi_status = bool(data.data)
+        self.last_cb_time = rospy.get_time()
+        print(self.last_cb_time)
         if(not self.reported):
            #rospy.loginfo("ROS services are up")
            rospy.loginfo("wifi status is " + str(self.wifi_status))
@@ -117,7 +141,7 @@ if __name__ == '__main__':
     rospy.init_node('mavros_watcher', anonymous=True)
     mavros_wifi_monitor = MavrosWatcher()
     while not rospy.is_shutdown():
-        rate = rospy.Rate(200)
+        rate = rospy.Rate(20)
         #rospy.spinOnce()
         rate.sleep()
     rospy.spin()
